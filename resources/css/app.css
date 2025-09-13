@@ -45,6 +45,11 @@
 
 @layer base {
 
+    /* 全体の背景色を設定 */
+    body {
+        background-color: #B8D1DC;
+    }
+
     *,
     ::after,
     ::before,
