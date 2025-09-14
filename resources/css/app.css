@@ -9,6 +9,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+    /* カスタムカラー */
+    --color-weight: #ff4444;
+    --color-steps: #ff8800;
+    --color-calories: #88cc00;
+
+    /* フォント */
+    --font-noto: 'Noto Sans JP', sans-serif;
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --color-zinc-50: #fafafa;
@@ -38,6 +45,11 @@
 
 @layer base {
 
+    /* 全体の背景色を設定 */
+    body {
+        background-color: #B8D1DC;
+    }
+
     *,
     ::after,
     ::before,
@@ -52,7 +64,7 @@
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
 input:focus[data-flux-control],
@@ -61,6 +73,64 @@ select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
 }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
+/* カスタムスタイル */
+.text-weight {
+    @apply text-[var(--color-weight)];
+}
+
+.text-steps {
+    @apply text-[var(--color-steps)];
+}
+
+.text-calories {
+    @apply text-[var(--color-calories)];
+}
+
+.border-weight {
+    @apply border-[var(--color-weight)];
+}
+
+.border-steps {
+    @apply border-[var(--color-steps)];
+}
+
+.border-calories {
+    @apply border-[var(--color-calories)];
+}
+
+.bg-weight {
+    @apply bg-[var(--color-weight)];
+}
+
+.bg-steps {
+    @apply bg-[var(--color-steps)];
+}
+
+.bg-calories {
+    @apply bg-[var(--color-calories)];
+}
+
+/* アニメーション */
+.fade-enter-active,
+.fade-leave-active {
+    @apply transition-opacity duration-300;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    @apply opacity-0;
+}
+
+/* グラフアニメーション */
+.graph-line {
+    @apply transition-all duration-1000;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: draw 2s ease forwards;
+}
+
+@keyframes draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}

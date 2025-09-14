@@ -5,5 +5,5 @@
         </h2>
     </x-slot>
 
-    <livewire:dashboard />
+    <livewire:records />
 </x-app-layout>
