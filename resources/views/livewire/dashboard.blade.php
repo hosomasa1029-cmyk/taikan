@@ -104,6 +104,8 @@
                             type: 'linear',
                             display: true,
                             position: 'left',
+                            min: 80,
+                            max: 100,
                             title: {
                                 display: true,
                                 text: '体重 (kg)'

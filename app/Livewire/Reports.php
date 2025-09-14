@@ -61,26 +61,20 @@ class Reports extends Component
     private function getMonthlyData($start, $end, $records)
     {
         $data = collect();
-        $current = $start->copy()->startOfWeek();
+        $current = $start->copy();
 
         while ($current <= $end) {
-            $weekKey = $current->format('Y-m-d');
-            $weekRecords = $records[$weekKey] ?? collect();
+            $dateKey = $current->format('Y-m-d');
+            $record = $records[$dateKey] ?? null;
 
-            if (is_array($weekRecords)) {
-                $weekRecords = collect($weekRecords);
-            }
+            $data->push([
+                'label' => $current->format('n/j'),
+                'weight' => $record ? $record->weight : null,
+                'steps' => $record ? $record->steps : null,
+                'calories' => $record ? $record->calories : null,
+            ]);
 
-            if ($weekRecords->isNotEmpty()) {
-                $data->push([
-                    'label' => $current->format('n/j') . '週',
-                    'weight' => round($weekRecords->avg('weight'), 1),
-                    'steps' => round($weekRecords->avg('steps')),
-                    'calories' => round($weekRecords->avg('calories')),
-                ]);
-            }
-
-            $current->addWeek();
+            $current->addDay();
         }
 
         return $data;
@@ -99,14 +93,12 @@ class Reports extends Component
                 $monthRecords = collect($monthRecords);
             }
 
-            if ($monthRecords->isNotEmpty()) {
-                $data->push([
-                    'label' => $current->format('n') . '月',
-                    'weight' => round($monthRecords->avg('weight'), 1),
-                    'steps' => round($monthRecords->avg('steps')),
-                    'calories' => round($monthRecords->avg('calories')),
-                ]);
-            }
+            $data->push([
+                'label' => $current->format('n') . '月',
+                'weight' => $monthRecords->isNotEmpty() ? round($monthRecords->avg('weight'), 1) : null,
+                'steps' => $monthRecords->isNotEmpty() ? round($monthRecords->avg('steps')) : null,
+                'calories' => $monthRecords->isNotEmpty() ? round($monthRecords->avg('calories')) : null,
+            ]);
 
             $current->addMonth();
         }
@@ -118,13 +110,22 @@ class Reports extends Component
     {
         $user = Auth::user();
 
-        // 日付の範囲を生成（今日までに制限）
+        // 日付の範囲を生成
+        // 月間はその月の末日まで表示、年間はその年の1月〜12月、それ以外は「今日」までに制限
         $start = Carbon::parse($this->startDate);
-        $end = min(Carbon::parse($this->endDate), Carbon::now());
+        $end = Carbon::parse($this->endDate);
+        if ($this->period === 'year') {
+            // 年間は固定で1年分の月ラベルを出す
+            $start = $start->copy()->startOfYear();
+            $end = $end->copy()->endOfYear();
+        }
+        $rangeEnd = $this->period === 'month' || $this->period === 'year'
+            ? $end
+            : Carbon::now()->min($end);
         $dateRange = collect();
         $current = $start->copy();
 
-        while ($current <= $end) {
+        while ($current <= $rangeEnd) {
             $dateRange->push($current->format('Y-m-d'));
             $current->addDay();
         }
@@ -141,8 +142,8 @@ class Reports extends Component
             'week' => $records->keyBy(function ($record) {
                 return $record->date->format('Y-m-d');
             }),
-            'month' => $records->groupBy(function ($record) {
-                return $record->date->startOfWeek()->format('Y-m-d');
+            'month' => $records->keyBy(function ($record) {
+                return $record->date->format('Y-m-d');
             }),
             'year' => $records->groupBy(function ($record) {
                 return $record->date->format('Y-m');

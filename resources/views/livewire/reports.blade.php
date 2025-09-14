@@ -91,7 +91,13 @@
             <h2 class="text-xl font-semibold mb-4">推移グラフ</h2>
 
             <div class="relative" style="height: 400px;">
-                <canvas id="reportChart"></canvas>
+                <!-- Livewireから更新されるデータを保持 -->
+                <div id="chartData" class="hidden" data-labels='@json($labels)'
+                    data-weights='@json($weights)' data-steps='@json($steps)'
+                    data-calories='@json($calories)'
+                    wire:key="chart-data-{{ $period }}-{{ $labels[0] ?? '' }}-{{ $labels[count($labels) - 1] ?? '' }}">
+                </div>
+                <canvas id="reportChart" wire:ignore></canvas>
             </div>
         </div>
     </div>
@@ -102,34 +108,36 @@
     <script>
         let chart = null;
 
-        function initializeChart() {
-            console.log('グラフデータ:', {
-                labels: @json($labels),
-                weights: @json($weights),
-                steps: @json($steps),
-                calories: @json($calories)
-            });
+        function readChartDataFromDOM() {
+            const el = document.getElementById('chartData');
+            if (!el) return null;
+            try {
+                return {
+                    labels: JSON.parse(el.dataset.labels || '[]'),
+                    weights: JSON.parse(el.dataset.weights || '[]'),
+                    steps: JSON.parse(el.dataset.steps || '[]'),
+                    calories: JSON.parse(el.dataset.calories || '[]'),
+                };
+            } catch (e) {
+                console.error('データの読み取りに失敗しました', e);
+                return null;
+            }
+        }
 
+        function initializeChart() {
+            const rawData = readChartDataFromDOM();
             const ctx = document.getElementById('reportChart').getContext('2d');
             if (chart) {
                 chart.destroy();
             }
 
-            // データの前処理
-            const rawData = {
-                labels: @json($labels),
-                weights: @json($weights),
-                steps: @json($steps),
-                calories: @json($calories)
-            };
-
-            console.log('Raw data:', rawData);
+            if (!rawData) return;
 
             const processedData = {
                 labels: rawData.labels,
-                weights: rawData.weights.map(v => v === null ? 0 : parseFloat(v)),
-                steps: rawData.steps.map(v => v === null ? 0 : parseInt(v)),
-                calories: rawData.calories.map(v => v === null ? 0 : parseInt(v))
+                weights: rawData.weights.map(v => v === null ? null : parseFloat(v)),
+                steps: rawData.steps.map(v => v === null ? null : parseInt(v)),
+                calories: rawData.calories.map(v => v === null ? null : parseInt(v))
             };
 
             chart = new Chart(ctx, {
@@ -164,6 +172,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    spanGaps: false,
                     interaction: {
                         intersect: false,
                         mode: 'index'
@@ -173,6 +182,8 @@
                             type: 'linear',
                             display: true,
                             position: 'left',
+                            min: 80,
+                            max: 100,
                             title: {
                                 display: true,
                                 text: '体重 (kg)'
@@ -217,7 +228,7 @@
 
         // Livewireのイベントでグラフを更新
         document.addEventListener('livewire:initialized', () => {
-            Livewire.on('periodChanged', initializeChart);
+            Livewire.on('periodChanged', () => requestAnimationFrame(initializeChart));
         });
     </script>
 @endpush
